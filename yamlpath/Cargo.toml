@@ -1,6 +1,6 @@
 [package]
 name = "yamlpath"
-version = "0.1.0"
+version = "0.2.0"
 description = "Format-preserving YAML feature extraction"
 authors = ["William Woodruff <william@yossarian.net>"]
 repository = "https://github.com/woodruffw/yamlpath"
