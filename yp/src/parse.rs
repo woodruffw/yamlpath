@@ -1,3 +1,5 @@
+//! Hacky DSL for path queries.
+
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1},
@@ -7,8 +9,7 @@ use nom::{
     sequence::{delimited, tuple},
     IResult,
 };
-
-use crate::{Component, Query};
+use yamlpath::{Component, Query};
 
 fn index(input: &str) -> IResult<&str, Component> {
     let (input, index) = delimited(char('['), i32, char(']'))(input)?;
@@ -31,15 +32,20 @@ fn query(input: &str) -> IResult<&str, Vec<Component>> {
     separated_list1(tag("."), alt((index, key)))(input)
 }
 
-pub(crate) fn parse(input: &str) -> Result<Query, nom::Err<nom::error::Error<&str>>> {
-    let (_, route) = all_consuming(query)(input)?;
+pub(crate) fn parse(input: &str) -> Result<Query, nom::Err<nom::error::Error<String>>> {
+    let (_, route) =
+        all_consuming(query)(input).map_err(|e: nom::Err<nom::error::Error<&str>>| {
+            e.map_input(|input| input.to_string()).into()
+        })?;
 
     Ok(Query { route })
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{parse::query, Component};
+    use yamlpath::Component;
+
+    use crate::parse::query;
 
     #[test]
     fn test_parse_errors() {

@@ -50,3 +50,14 @@ To get started with it, you can either build it from ths repository or
 ```bash
 cargo install yp
 ```
+
+...and then use it:
+
+```bash
+yp --help
+yp 'foo.bar.[1].baz' some-input.yml
+```
+
+Note: the format of `yp`'s output is not stable or intended for programmatic
+consumption. Similarly, the query language used by `yp` is not stable or
+intended for non-experimental use.

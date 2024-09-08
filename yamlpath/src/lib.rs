@@ -13,9 +13,6 @@
 #![allow(clippy::redundant_field_names)]
 #![forbid(unsafe_code)]
 
-#[cfg(feature = "parse")]
-mod parse;
-
 use thiserror::Error;
 use tree_sitter::{Node, Parser, Tree};
 
@@ -50,10 +47,6 @@ pub enum QueryError {
     /// the given field name.
     #[error("syntax node `{0}` is missing child field `{1}`")]
     MissingChildField(String, &'static str),
-    /// The query expression couldn't be parsed.
-    #[cfg(feature = "parse")]
-    #[error("malformed query")]
-    InvalidQuery(#[from] nom::Err<nom::error::Error<String>>),
 }
 
 /// A query into some YAML document.
@@ -73,35 +66,9 @@ pub enum QueryError {
 ///
 /// The sub-list member `e` would be identified via the path
 /// `foo`, `bar`, `baz`, `1`, `1`.
-///
-/// With the `parse` feature enabled, `Query` objects can be created from
-/// a small custom language. See [`Query::new`] for syntax details.
 pub struct Query {
     /// The individual top-down components of this query.
     pub route: Vec<Component>,
-}
-
-impl Query {
-    /// Create a new `Query` from the given *expression*.
-    ///
-    /// Query expressions are defined as one or more *component*, each
-    /// of which identifies either a mapping key or a list index.
-    ///
-    /// For example, the following expression:
-    ///
-    /// ```plain
-    /// foo.bar.baz.[1].[2]
-    /// ```
-    ///
-    /// Selects the `foo` field at the top-level of the YAML document,
-    /// its member `bar`, `bar`'s member `baz` (which is a list), the second
-    /// element of `baz`, and then the third element of the sublist of `baz`.
-    #[cfg(feature = "parse")]
-    pub fn new(query: &str) -> Result<Self, QueryError> {
-        parse::parse(query).map_err(|e: nom::Err<nom::error::Error<&str>>| {
-            e.map_input(|input| input.to_string()).into()
-        })
-    }
 }
 
 /// A single `Query` component.
@@ -319,26 +286,12 @@ impl<'a> Document<'a> {
     }
 }
 
-/// Perform a one-off query on a YAML document.
-///
-/// This API re-parses the YAML document each time it's called, meaning
-/// that it's only suitable for one-off operations. To query a YAML
-/// document repeatedly, use the [`Document::new`] and [`Document::query`]
-/// APIs.
-#[cfg(feature = "parse")]
-pub fn query(doc: &str, query: &str) -> Result<Feature, QueryError> {
-    let doc = Document::new(doc)?;
-    let query = Query::new(query)?;
-
-    doc.query(&query)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{Component, Document, Query};
 
     #[test]
-    fn test_query() {
+    fn test_basic() {
         let doc = r#"
 foo: bar
 baz:
