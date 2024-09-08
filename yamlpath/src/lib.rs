@@ -231,7 +231,12 @@ impl<'a> Document<'a> {
         // node a bit to have it point to the parent `block_mapping_pair`.
         // This results in a (subjectively) more intuitive extracted feature,
         // since `foo: bar` gets extracted for `foo` instead of just `bar`.
-        if matches!(query.route.last().unwrap(), Component::Key(_)) {
+        //
+        // NOTE: We might already be on the block_mapping_pair if we terminated
+        // with an absent value, in which case we don't need to do this cleanup.
+        if matches!(query.route.last().unwrap(), Component::Key(_))
+            && key_node.kind_id() != self.block_mapping_pair_id
+        {
             key_node = key_node.parent().unwrap()
         }
 
@@ -277,9 +282,12 @@ impl<'a> Document<'a> {
                 .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "key"))?;
             let key_value = key.utf8_text(self.source.as_bytes()).unwrap();
             if key_value == expected {
-                return child
-                    .child_by_field_name("value")
-                    .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "value"));
+                // HACK: a mapping key might not have a corresponding value,
+                // in which case we fall back and return the `block_mapping_pair`
+                // itself here. This technically breaks our contract of returning
+                // only block_node/flow_node nodes during descent, but not
+                // in a way that matters (since an empty value is terminal anyways).
+                return Ok(child.child_by_field_name("value").unwrap_or(child));
             }
         }
 
