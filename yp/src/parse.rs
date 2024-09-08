@@ -33,10 +33,8 @@ fn query(input: &str) -> IResult<&str, Vec<Component>> {
 }
 
 pub(crate) fn parse(input: &str) -> Result<Query, nom::Err<nom::error::Error<String>>> {
-    let (_, route) =
-        all_consuming(query)(input).map_err(|e: nom::Err<nom::error::Error<&str>>| {
-            e.map_input(|input| input.to_string())
-        })?;
+    let (_, route) = all_consuming(query)(input)
+        .map_err(|e: nom::Err<nom::error::Error<&str>>| e.map_input(|input| input.to_string()))?;
 
     // Infallible: we always parse at least one component above.
     Ok(Query::new(route).unwrap())
