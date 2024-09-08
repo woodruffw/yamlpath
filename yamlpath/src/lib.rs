@@ -140,18 +140,13 @@ impl From<Node<'_>> for Location {
 
 /// Represents the result of a successful query.
 #[derive(Debug)]
-pub struct Feature<'a> {
+pub struct Feature {
     /// The exact location of the query result.
     pub location: Location,
 
     /// The "context" location for the quest result.
     /// This is typically the surrounding mapping or list structure.
     pub context: Option<Location>,
-
-    /// The raw result of the query itself.
-    ///
-    /// Note that this is **not** guaranteed to be valid YAML.
-    pub raw: &'a str,
 }
 
 /// Represents a queryable YAML document.
@@ -206,7 +201,7 @@ impl<'a> Document<'a> {
 
     /// Perform a query on the current document, returning a `Feature`
     /// if the query succeeds.
-    pub fn query(&self, query: &Query) -> Result<Feature<'a>, QueryError> {
+    pub fn query(&self, query: &Query) -> Result<Feature, QueryError> {
         let node = self.query_node(query)?;
 
         // TODO: Figure out comment extraction. This is made annoying
@@ -218,8 +213,15 @@ impl<'a> Document<'a> {
         Ok(Feature {
             location: Location::from(node),
             context: node.parent().map(Location::from),
-            raw: node.utf8_text(&self.source.as_bytes()).unwrap(),
         })
+    }
+
+    /// Returns a slice of the original document corresponding to the given
+    /// `Feature`.
+    ///
+    /// Panics if the feature's span is invalid.
+    pub fn extract(&self, feature: &Feature) -> &str {
+        &self.source[feature.location.byte_span.0..feature.location.byte_span.1]
     }
 
     fn query_node(&self, query: &Query) -> Result<Node, QueryError> {
@@ -319,12 +321,12 @@ impl<'a> Document<'a> {
 
 /// Perform a one-off query on a YAML document.
 ///
-/// This API re-parses the YAML document each time its called, meaning
+/// This API re-parses the YAML document each time it's called, meaning
 /// that it's only suitable for one-off operations. To query a YAML
 /// document repeatedly, use the [`Document::new`] and [`Document::query`]
 /// APIs.
 #[cfg(feature = "parse")]
-pub fn query<'a>(doc: &'a str, query: &str) -> Result<Feature<'a>, QueryError> {
+pub fn query(doc: &str, query: &str) -> Result<Feature, QueryError> {
     let doc = Document::new(doc)?;
     let query = Query::new(query)?;
 
@@ -360,6 +362,6 @@ baz:
             ],
         };
 
-        assert_eq!(doc.query(&query).unwrap().raw, "{d: e}");
+        assert_eq!(doc.extract(&doc.query(&query).unwrap()), "{d: e}");
     }
 }

@@ -7,6 +7,12 @@ basic queries over YAML documents, returning exact line- and byte-span
 results with comments and formatting preserved exactly as they appeared
 in the original document.
 
+`yamlpath` uses [`tree-sitter`] and `tree-sitter-yaml` under the hood.
+
+[`tree-sitter`]: https://github.com/tree-sitter/tree-sitter
+
+[`tree-sitter-yaml`]: https://github.com/tree-sitter-grammars/tree-sitter-yaml
+
 > [!IMPORTANT]
 >
 > This is not a substitute for full-fledged query languages or tools
@@ -41,6 +47,6 @@ to demonstrate what it can do.
 To get started with it, you can either build it from ths repository or
 `cargo install` it:
 
-```
+```bash
 cargo install yp
 ```
