@@ -1,5 +1,9 @@
 # yamlpath
 
+
+[![CI](https://github.com/woodruffw/yamlpath/actions/workflows/ci.yml/badge.svg)](https://github.com/woodruffw/yamlpath/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/yamlpath)](https://crates.io/crates/yamlpath)
+
 Format-preserving YAML feature extraction.
 
 You can use this library (or [`yp`](#the-yp-cli), its associated CLI) to perform
