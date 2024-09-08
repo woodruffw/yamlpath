@@ -12,7 +12,7 @@ basic queries over YAML documents, returning exact line- and byte-span
 results with comments and formatting preserved exactly as they appear
 in the original source.
 
-`yamlpath` uses [`tree-sitter`] and `tree-sitter-yaml` under the hood.
+`yamlpath` uses [`tree-sitter`] and [`tree-sitter-yaml`] under the hood.
 
 [`tree-sitter`]: https://github.com/tree-sitter/tree-sitter
 
