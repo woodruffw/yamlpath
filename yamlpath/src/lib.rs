@@ -256,7 +256,7 @@ impl<'a> Document<'a> {
         {
             match component {
                 Component::Index(idx) => self.descend_sequence(&child, *idx),
-                Component::Key(key) => Err(QueryError::ExhaustedMapping(key.into())),
+                Component::Key(key) => Err(QueryError::ExpectedMapping(key.into())),
             }
         } else {
             Err(QueryError::UnexpectedNode(child.kind().into()))
