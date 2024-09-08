@@ -3,6 +3,7 @@
 
 [![CI](https://github.com/woodruffw/yamlpath/actions/workflows/ci.yml/badge.svg)](https://github.com/woodruffw/yamlpath/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/yamlpath)](https://crates.io/crates/yamlpath)
+[![docs.rs](https://img.shields.io/docsrs/yamlpath)](https://docs.rs/yamlpath)
 
 Format-preserving YAML feature extraction.
 
