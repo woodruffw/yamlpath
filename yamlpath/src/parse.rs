@@ -1,10 +1,10 @@
 use nom::{
     branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, char, i32},
-    combinator::all_consuming,
+    bytes::complete::{tag, take_till1},
+    character::complete::{char, i32},
+    combinator::{all_consuming, not},
     multi::separated_list1,
-    sequence::delimited,
+    sequence::{delimited, tuple},
     IResult,
 };
 
@@ -18,7 +18,11 @@ fn index(input: &str) -> IResult<&str, Component> {
 
 fn key(input: &str) -> IResult<&str, Component> {
     // TODO: quoted variant.
-    let (input, k) = alpha1(input)?;
+    // TODO: This is a mess -- we need negative match on `[ ... ]` to
+    // avoid accidentally consuming the empty `[]` case as a valid key
+    // rather than an invalid index.
+    let (input, (_, k, _)) =
+        tuple((not(tag("[")), take_till1(|c| c == '.'), not(tag("]"))))(input)?;
 
     Ok((input, Component::Key(k.into())))
 }
@@ -50,7 +54,7 @@ mod tests {
 
     #[test]
     fn test_basic() {
-        let q = "foo.bar.baz.[1]";
+        let q = "foo.bar.baz.has_underscore.[1]";
         let (_, components) = query(q).unwrap();
         assert_eq!(
             components,
@@ -58,6 +62,7 @@ mod tests {
                 Component::Key("foo".into()),
                 Component::Key("bar".into()),
                 Component::Key("baz".into()),
+                Component::Key("has_underscore".into()),
                 Component::Index(1),
             ]
         )

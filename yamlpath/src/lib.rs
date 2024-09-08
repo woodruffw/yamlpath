@@ -17,7 +17,7 @@
 mod parse;
 
 use thiserror::Error;
-use tree_sitter::{Node, Parser, Point, Tree};
+use tree_sitter::{Node, Parser, Tree};
 
 /// Possible errors when performing YAML path queries.
 #[derive(Error, Debug)]
@@ -158,19 +158,20 @@ pub struct Feature<'a> {
 pub struct Document<'a> {
     source: &'a str,
     tree: Tree,
-    _block_node: u16,
-    _flow_node: u16,
+    document_id: u16,
+    _block_node_id: u16,
+    _flow_node_id: u16,
     // A "block" sequence, i.e. a YAML-style array (`- foo\n-bar`)
-    block_sequence: u16,
+    block_sequence_id: u16,
     // A "flow" sequence, i.e. a JSON-style array (`[foo, bar]`)
-    flow_sequence: u16,
+    flow_sequence_id: u16,
     // A "block" mapping, i.e. a YAML-style map (`foo: bar`)
-    block_mapping: u16,
+    block_mapping_id: u16,
     // A "flow" mapping, i.e. a JSON-style map (`{foo: bar}`)
-    flow_mapping: u16,
-    _block_mapping_pair: u16,
-    _flow_pair: u16,
-    block_sequence_item: u16,
+    flow_mapping_id: u16,
+    _block_mapping_pair_id: u16,
+    _flow_pair_id: u16,
+    block_sequence_item_id: u16,
 }
 
 impl<'a> Document<'a> {
@@ -190,15 +191,16 @@ impl<'a> Document<'a> {
         Ok(Self {
             source,
             tree,
-            _block_node: language.id_for_node_kind("block_node", true),
-            _flow_node: language.id_for_node_kind("flow_node", true),
-            block_sequence: language.id_for_node_kind("block_sequence", true),
-            flow_sequence: language.id_for_node_kind("flow_sequence", true),
-            block_mapping: language.id_for_node_kind("block_mapping", true),
-            flow_mapping: language.id_for_node_kind("flow_mapping", true),
-            _block_mapping_pair: language.id_for_node_kind("block_mapping_pair", true),
-            _flow_pair: language.id_for_node_kind("flow_pair", true),
-            block_sequence_item: language.id_for_node_kind("block_sequence_item", true),
+            document_id: language.id_for_node_kind("document", true),
+            _block_node_id: language.id_for_node_kind("block_node", true),
+            _flow_node_id: language.id_for_node_kind("flow_node", true),
+            block_sequence_id: language.id_for_node_kind("block_sequence", true),
+            flow_sequence_id: language.id_for_node_kind("flow_sequence", true),
+            block_mapping_id: language.id_for_node_kind("block_mapping", true),
+            flow_mapping_id: language.id_for_node_kind("flow_mapping", true),
+            _block_mapping_pair_id: language.id_for_node_kind("block_mapping_pair", true),
+            _flow_pair_id: language.id_for_node_kind("flow_pair", true),
+            block_sequence_item_id: language.id_for_node_kind("block_sequence_item", true),
         })
     }
 
@@ -221,13 +223,20 @@ impl<'a> Document<'a> {
     }
 
     fn query_node(&self, query: &Query) -> Result<Node, QueryError> {
-        // All tree-sitter-yaml trees start with `stream > document` nodes.
+        // All tree-sitter-yaml trees start with a `stream` node.
         let stream = self.tree.root_node();
-        let document = stream.child(0).unwrap();
+
+        // The `document` child is the "body" of the YAML document; it
+        // might not be the first node in the `stream` if there are comments.
+        let mut cur = stream.walk();
+        let document = stream
+            .named_children(&mut cur)
+            .find(|c| c.kind_id() == self.document_id)
+            .ok_or_else(|| QueryError::MissingChild("document".into()))?;
 
         // From here, we expect a top-level `block_node` or `flow_node`
         // depending on how the top-level value is expressed.
-        let top_node = document.child(0).unwrap();
+        let top_node = dbg!(document).child(0).unwrap();
         let mut key_node = top_node;
         for component in &query.route {
             match self.descend(&key_node, component) {
@@ -247,12 +256,14 @@ impl<'a> Document<'a> {
 
         // We expect the child to be a sequence or mapping of either
         // flow or block type.
-        if child.kind_id() == self.block_mapping || child.kind_id() == self.flow_mapping {
+        if child.kind_id() == self.block_mapping_id || child.kind_id() == self.flow_mapping_id {
             match component {
                 Component::Key(key) => self.descend_mapping(&child, key),
                 Component::Index(idx) => Err(QueryError::ExpectedList(*idx)),
             }
-        } else if child.kind_id() == self.block_sequence || child.kind_id() == self.flow_sequence {
+        } else if child.kind_id() == self.block_sequence_id
+            || child.kind_id() == self.flow_sequence_id
+        {
             match component {
                 Component::Index(idx) => self.descend_sequence(&child, *idx),
                 Component::Key(key) => Err(QueryError::ExhaustedMapping(key.into())),
@@ -296,7 +307,7 @@ impl<'a> Document<'a> {
 
         // If we're in a block_sequence, there's an intervening `block_sequence_item`
         // getting in the way of our `flow_node`.
-        if child.kind_id() == self.block_sequence_item {
+        if child.kind_id() == self.block_sequence_item_id {
             return child
                 .named_child(0)
                 .ok_or_else(|| QueryError::MissingChild(child.kind().into()));
