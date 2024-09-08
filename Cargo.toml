@@ -1,0 +1,3 @@
+[workspace]
+members = ["yamlpath", "yp"]
+resolver = "2"
