@@ -68,7 +68,20 @@ pub enum QueryError {
 /// `foo`, `bar`, `baz`, `1`, `1`.
 pub struct Query {
     /// The individual top-down components of this query.
-    pub route: Vec<Component>,
+    route: Vec<Component>,
+}
+
+impl Query {
+    /// Constructs a new query from the given path components.
+    ///
+    /// Returns `None` if the component list is empty.
+    pub fn new(route: Vec<Component>) -> Option<Self> {
+        if route.is_empty() {
+            None
+        } else {
+            Some(Self { route })
+        }
+    }
 }
 
 /// A single `Query` component.
@@ -212,6 +225,14 @@ impl<'a> Document<'a> {
                 Ok(next) => key_node = next,
                 Err(e) => return Err(e),
             }
+        }
+
+        // If we're ending on a key and not an index, we clean up the final
+        // node a bit to have it point to the parent `block_mapping_pair`.
+        // This results in a (subjectively) more intuitive extracted feature,
+        // since `foo: bar` gets extracted for `foo` instead of just `bar`.
+        if matches!(query.route.last().unwrap(), Component::Key(_)) {
+            key_node = key_node.parent().unwrap()
         }
 
         Ok(key_node)

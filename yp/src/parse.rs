@@ -38,7 +38,8 @@ pub(crate) fn parse(input: &str) -> Result<Query, nom::Err<nom::error::Error<Str
             e.map_input(|input| input.to_string()).into()
         })?;
 
-    Ok(Query { route })
+    // Infallible: we always parse at least one component above.
+    Ok(Query::new(route).unwrap())
 }
 
 #[cfg(test)]

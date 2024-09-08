@@ -28,7 +28,8 @@ fn main() -> Result<()> {
 
     let finding = doc.query(&query)?;
 
-    dbg!(finding);
+    println!("Finding: {finding:?}");
+    println!("Extracted:\n\n{}", doc.extract(&finding));
 
     Ok(())
 }
