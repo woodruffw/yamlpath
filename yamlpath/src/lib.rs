@@ -160,7 +160,7 @@ pub struct Document<'a> {
     tree: Tree,
     document_id: u16,
     _block_node_id: u16,
-    _flow_node_id: u16,
+    flow_node_id: u16,
     // A "block" sequence, i.e. a YAML-style array (`- foo\n-bar`)
     block_sequence_id: u16,
     // A "flow" sequence, i.e. a JSON-style array (`[foo, bar]`)
@@ -169,7 +169,7 @@ pub struct Document<'a> {
     block_mapping_id: u16,
     // A "flow" mapping, i.e. a JSON-style map (`{foo: bar}`)
     flow_mapping_id: u16,
-    _block_mapping_pair_id: u16,
+    block_mapping_pair_id: u16,
     _flow_pair_id: u16,
     block_sequence_item_id: u16,
 }
@@ -193,12 +193,12 @@ impl<'a> Document<'a> {
             tree,
             document_id: language.id_for_node_kind("document", true),
             _block_node_id: language.id_for_node_kind("block_node", true),
-            _flow_node_id: language.id_for_node_kind("flow_node", true),
+            flow_node_id: language.id_for_node_kind("flow_node", true),
             block_sequence_id: language.id_for_node_kind("block_sequence", true),
             flow_sequence_id: language.id_for_node_kind("flow_sequence", true),
             block_mapping_id: language.id_for_node_kind("block_mapping", true),
             flow_mapping_id: language.id_for_node_kind("flow_mapping", true),
-            _block_mapping_pair_id: language.id_for_node_kind("block_mapping_pair", true),
+            block_mapping_pair_id: language.id_for_node_kind("block_mapping_pair", true),
             _flow_pair_id: language.id_for_node_kind("flow_pair", true),
             block_sequence_item_id: language.id_for_node_kind("block_sequence_item", true),
         })
@@ -236,7 +236,7 @@ impl<'a> Document<'a> {
 
         // From here, we expect a top-level `block_node` or `flow_node`
         // depending on how the top-level value is expressed.
-        let top_node = dbg!(document).child(0).unwrap();
+        let top_node = document.child(0).unwrap();
         let mut key_node = top_node;
         for component in &query.route {
             match self.descend(&key_node, component) {
@@ -275,16 +275,16 @@ impl<'a> Document<'a> {
 
     fn descend_mapping<'b>(&self, node: &Node<'b>, expected: &str) -> Result<Node<'b>, QueryError> {
         let mut cur = node.walk();
-        for child in node.children(&mut cur) {
-            // child should be flow_pair | block_mapping_pair, both
-            // of which have key/value children.
-            // if child.kind_id() != self.flow_pair || child.kind_id() != self.block_mapping_pair {
-            //     panic!("unexpected AST structure: mapping does not contain pairs?");
-            // }
+        for child in node.named_children(&mut cur) {
+            // Skip over any unexpected children, e.g. comments.
+            if child.kind_id() != self.flow_node_id && child.kind_id() != self.block_mapping_pair_id
+            {
+                continue;
+            }
 
             let key = child
                 .child_by_field_name("key")
-                .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "value"))?;
+                .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "key"))?;
             let key_value = key.utf8_text(self.source.as_bytes()).unwrap();
             if key_value == expected {
                 return child
