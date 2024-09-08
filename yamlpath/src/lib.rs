@@ -130,8 +130,8 @@ pub struct Feature {
 }
 
 /// Represents a queryable YAML document.
-pub struct Document<'a> {
-    source: &'a str,
+pub struct Document {
+    source: String,
     tree: Tree,
     document_id: u16,
     _block_node_id: u16,
@@ -149,15 +149,17 @@ pub struct Document<'a> {
     block_sequence_item_id: u16,
 }
 
-impl<'a> Document<'a> {
+impl Document {
     /// Construct a new `Document` from the given YAML.
-    pub fn new(source: &'a str) -> Result<Self, QueryError> {
+    pub fn new(source: impl Into<String>) -> Result<Self, QueryError> {
+        let source = source.into();
+
         let mut parser = Parser::new();
         let language = tree_sitter_yaml::language();
         parser.set_language(&language)?;
 
         // NOTE: Infallible, assuming `language` is correctly constructed above.
-        let tree = parser.parse(source, None).unwrap();
+        let tree = parser.parse(&source, None).unwrap();
 
         if tree.root_node().has_error() {
             return Err(QueryError::InvalidInput);
