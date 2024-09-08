@@ -1,7 +1,13 @@
 [package]
 name = "yamlpath"
 version = "0.1.0"
+description = "Format-preserving YAML feature extraction"
+authors = ["William Woodruff <william@yossarian.net>"]
+repository = "https://github.com/woodruffw/yamlpath"
+readme = "../README.md"
+keywords = ["yaml"]
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 thiserror = "1.0.63"

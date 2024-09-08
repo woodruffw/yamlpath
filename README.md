@@ -1,11 +1,11 @@
 # yamlpath
 
-A library and CLI tool for format-preserving YAML queries.
+Format-preserving YAML feature extraction.
 
 You can use this library (or [`yp`](#the-yp-cli), its associated CLI) to perform
 basic queries over YAML documents, returning exact line- and byte-span
-results with comments and formatting preserved exactly as they appeared
-in the original document.
+results with comments and formatting preserved exactly as they appear
+in the original source.
 
 `yamlpath` uses [`tree-sitter`] and `tree-sitter-yaml` under the hood.
 
@@ -44,11 +44,10 @@ a human's understanding of the YAML input.
 `yamlpath` is developed primarily as a library, but the `yp` CLI exists
 to demonstrate what it can do.
 
-To get started with it, you can either build it from ths repository or
-`cargo install` it:
+To get started with it, you can either build it from ths repository:
 
 ```bash
-cargo install yp
+cargo build -p yp
 ```
 
 ...and then use it:
@@ -61,3 +60,7 @@ yp 'foo.bar.[1].baz' some-input.yml
 Note: the format of `yp`'s output is not stable or intended for programmatic
 consumption. Similarly, the query language used by `yp` is not stable or
 intended for non-experimental use.
+
+## License
+
+MIT License.
