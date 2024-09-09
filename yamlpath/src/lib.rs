@@ -84,6 +84,44 @@ impl Query {
     }
 }
 
+/// A builder for [`Query`] objects.
+pub struct QueryBuilder {
+    route: Vec<Component>,
+}
+
+impl Default for QueryBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl QueryBuilder {
+    /// Starts a new `QueryBuilder`.
+    pub fn new() -> Self {
+        Self { route: vec![] }
+    }
+
+    /// Adds a new key to the query being built.
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.route.push(Component::Key(key.into()));
+        self
+    }
+
+    /// Adds a new index to the query being built.
+    pub fn index(mut self, index: usize) -> Self {
+        self.route.push(Component::Index(index));
+        self
+    }
+
+    /// Construct this `QueryBuilder` into a [`Query`], consuming
+    /// it in the process.
+    ///
+    /// Panics unless at least one component has been added.
+    pub fn build(self) -> Query {
+        Query::new(self.route).expect("API misuse: must add at least one component")
+    }
+}
+
 /// A single `Query` component.
 #[derive(Debug, PartialEq)]
 pub enum Component {
@@ -319,7 +357,29 @@ impl Document {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Component, Document, Query};
+    use crate::{Component, Document, Query, QueryBuilder};
+
+    #[test]
+    fn test_query_builder() {
+        let query = QueryBuilder::new()
+            .key("foo")
+            .key("bar")
+            .index(1)
+            .index(123)
+            .key("lol")
+            .build();
+
+        assert_eq!(
+            query.route,
+            [
+                Component::Key("foo".into()),
+                Component::Key("bar".into()),
+                Component::Index(1),
+                Component::Index(123),
+                Component::Key("lol".into()),
+            ]
+        )
+    }
 
     #[test]
     fn test_basic() {
