@@ -183,7 +183,7 @@ pub struct Document {
     // A "flow" mapping, i.e. a JSON-style map (`{foo: bar}`)
     flow_mapping_id: u16,
     block_mapping_pair_id: u16,
-    _flow_pair_id: u16,
+    flow_pair_id: u16,
     block_sequence_item_id: u16,
 }
 
@@ -214,7 +214,7 @@ impl Document {
             block_mapping_id: language.id_for_node_kind("block_mapping", true),
             flow_mapping_id: language.id_for_node_kind("flow_mapping", true),
             block_mapping_pair_id: language.id_for_node_kind("block_mapping_pair", true),
-            _flow_pair_id: language.id_for_node_kind("flow_pair", true),
+            flow_pair_id: language.id_for_node_kind("flow_pair", true),
             block_sequence_item_id: language.id_for_node_kind("block_sequence_item", true),
         })
     }
@@ -312,7 +312,7 @@ impl Document {
         let mut cur = node.walk();
         for child in node.named_children(&mut cur) {
             // Skip over any unexpected children, e.g. comments.
-            if child.kind_id() != self.flow_node_id && child.kind_id() != self.block_mapping_pair_id
+            if child.kind_id() != self.flow_pair_id && child.kind_id() != self.block_mapping_pair_id
             {
                 continue;
             }
@@ -338,7 +338,12 @@ impl Document {
     fn descend_sequence<'b>(&self, node: &Node<'b>, idx: usize) -> Result<Node<'b>, QueryError> {
         let mut cur = node.walk();
         // TODO: Optimize; we shouldn't collect the entire child set just to extract one.
-        let children = node.named_children(&mut cur).collect::<Vec<_>>();
+        let children = node
+            .named_children(&mut cur)
+            .filter(|n| {
+                n.kind_id() == self.block_sequence_item_id || n.kind_id() == self.flow_node_id
+            })
+            .collect::<Vec<_>>();
         let Some(child) = children.get(idx) else {
             return Err(QueryError::ExhaustedList(idx, children.len()));
         };
