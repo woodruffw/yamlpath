@@ -107,6 +107,15 @@ impl QueryBuilder {
         self
     }
 
+    /// Adds multiple new keys to the query being built.
+    pub fn keys(mut self, keys: impl Iterator<Item = impl Into<String>>) -> Self {
+        for key in keys {
+            self = self.key(key.into())
+        }
+
+        self
+    }
+
     /// Adds a new index to the query being built.
     pub fn index(mut self, index: usize) -> Self {
         self.route.push(Component::Index(index));
