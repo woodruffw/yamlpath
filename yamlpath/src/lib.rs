@@ -176,6 +176,15 @@ pub struct Feature {
     pub context: Option<Location>,
 }
 
+impl From<Node<'_>> for Feature {
+    fn from(node: Node<'_>) -> Self {
+        Feature {
+            location: Location::from(node),
+            context: node.parent().map(Location::from),
+        }
+    }
+}
+
 /// Represents a queryable YAML document.
 pub struct Document {
     source: String,
@@ -228,21 +237,23 @@ impl Document {
         })
     }
 
+    /// Returns a `Feature` for this document's root node.
+    ///
+    /// This is typically useful as a "fallback" feature, e.g. for capturing
+    /// a span of the entire document.
+    pub fn root(&self) -> Feature {
+        self.tree.root_node().into()
+    }
+
     /// Perform a query on the current document, returning a `Feature`
     /// if the query succeeds.
     pub fn query(&self, query: &Query) -> Result<Feature, QueryError> {
-        let node = self.query_node(query)?;
-
         // TODO: Figure out comment extraction. This is made annoying
         // by the fact that comments aren't parented in obvious places on
         // the tree, e.g. `[a, b, [c]] # foo` has a comment adjacent to the
         // top sequence when we may be querying for the `c` in the innermost
         // sequence.
-
-        Ok(Feature {
-            location: Location::from(node),
-            context: node.parent().map(Location::from),
-        })
+        self.query_node(query).map(|n| n.into())
     }
 
     /// Returns a slice of the original document corresponding to the given
