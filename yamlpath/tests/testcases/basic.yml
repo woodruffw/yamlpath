@@ -3,8 +3,12 @@ testcase:
     bar:
       baz: hello!
 
+  emptykey:
+
 queries:
   - query: [foo, bar, baz]
     expected: "baz: hello!"
   - query: [foo, bar]
     expected: "bar:\n      baz: hello!"
+  - query: [emptykey]
+    expected: "emptykey:"

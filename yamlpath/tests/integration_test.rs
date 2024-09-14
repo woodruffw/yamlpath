@@ -30,7 +30,8 @@ struct TestcaseQuery {
 
 #[derive(Deserialize)]
 struct Testcase {
-    testcase: serde_yaml::Value,
+    #[serde(rename = "testcase")]
+    _testcase: serde_yaml::Value,
     queries: Vec<TestcaseQuery>,
 }
 

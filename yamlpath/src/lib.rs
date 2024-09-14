@@ -361,19 +361,27 @@ impl Document {
         let children = node
             .named_children(&mut cur)
             .filter(|n| {
-                n.kind_id() == self.block_sequence_item_id || n.kind_id() == self.flow_node_id
+                n.kind_id() == self.block_sequence_item_id
+                    || n.kind_id() == self.flow_node_id
+                    || n.kind_id() == self.flow_pair_id
             })
             .collect::<Vec<_>>();
         let Some(child) = children.get(idx) else {
             return Err(QueryError::ExhaustedList(idx, children.len()));
         };
 
-        // If we're in a block_sequence, there's an intervening `block_sequence_item`
-        // getting in the way of our `flow_node`.
         if child.kind_id() == self.block_sequence_item_id {
+            // If we're in a block_sequence, there's an intervening `block_sequence_item`
+            // getting in the way of our `flow_node`.
             return child
                 .named_child(0)
                 .ok_or_else(|| QueryError::MissingChild(child.kind().into()));
+        } else if child.kind_id() == self.flow_pair_id {
+            // Similarly, if our index happens to be a `flow_pair`, we need to
+            // get the `value` child to get the next `flow_node`.
+            // The `value` might not be present (e.g. `{foo: }`), in which case
+            // we treat the `flow_pair` itself as terminal like with the mapping hack.
+            return Ok(child.child_by_field_name("value").unwrap_or(*child));
         }
 
         Ok(*child)
