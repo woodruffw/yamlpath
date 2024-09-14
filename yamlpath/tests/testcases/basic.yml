@@ -1,0 +1,10 @@
+testcase:
+  foo:
+    bar:
+      baz: hello!
+
+queries:
+  - query: [foo, bar, baz]
+    expected: "baz: hello!"
+  - query: [foo, bar]
+    expected: "bar:\n      baz: hello!"
