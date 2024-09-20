@@ -243,6 +243,12 @@ impl Document {
         })
     }
 
+    /// Return a view of the original YAML source that this document was
+    /// loaded from.
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
     /// Returns a `Feature` for this document's root node.
     ///
     /// This is typically useful as a "fallback" feature, e.g. for capturing
