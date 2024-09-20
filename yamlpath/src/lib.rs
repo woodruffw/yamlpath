@@ -262,12 +262,31 @@ impl Document {
         self.query_node(query).map(|n| n.into())
     }
 
-    /// Returns a slice of the original document corresponding to the given
-    /// `Feature`.
+    /// Returns a string slice of the original document corresponding to the given
+    /// [`Feature`].
+    ///
+    /// **Important**: The returned string here can be longer than the span
+    /// identified in the [`Feature`]. In particular, this API will return a
+    /// longer string if it identifies leading non-newline whitespace
+    /// ahead of the captured [`Feature`], since this indicates indentation
+    /// not encapsulated by the feature itself.
     ///
     /// Panics if the feature's span is invalid.
     pub fn extract(&self, feature: &Feature) -> &str {
-        &self.source[feature.location.byte_span.0..feature.location.byte_span.1]
+        let mut start_idx = feature.location.byte_span.0;
+        let pre_slice = &self.source[0..start_idx];
+        if let Some(last_newline) = pre_slice.rfind('\n') {
+            // If everything between the last newline and the start_index
+            // is ASCII spaces, then we include it.
+            if self.source[last_newline + 1..start_idx]
+                .bytes()
+                .all(|b| b == b' ')
+            {
+                start_idx = last_newline + 1
+            }
+        }
+
+        &self.source[start_idx..feature.location.byte_span.1]
     }
 
     /// Given a [`Feature`], return the comment (if one exists) on
