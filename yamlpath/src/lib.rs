@@ -85,6 +85,7 @@ impl Query {
 }
 
 /// A builder for [`Query`] objects.
+#[derive(Clone, Debug)]
 pub struct QueryBuilder {
     route: Vec<Component>,
 }
@@ -132,7 +133,7 @@ impl QueryBuilder {
 }
 
 /// A single `Query` component.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Component {
     /// A YAML key.
     Key(String),
