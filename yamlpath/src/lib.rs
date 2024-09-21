@@ -82,6 +82,14 @@ impl Query {
             Some(Self { route })
         }
     }
+
+    /// Returns a query for the "parent" path of the query's current path,
+    /// or `None` the current query has no parent.
+    pub fn parent(&self) -> Option<Self> {
+        let mut route = self.route.clone();
+        route.truncate(self.route.len() - 1);
+        Self::new(route)
+    }
 }
 
 /// A builder for [`Query`] objects.
@@ -463,6 +471,20 @@ impl Document {
 #[cfg(test)]
 mod tests {
     use crate::{Component, Document, Query, QueryBuilder};
+
+    #[test]
+    fn test_query_parent() {
+        let query = QueryBuilder::new()
+            .keys(["foo", "bar", "baz"].into_iter())
+            .build();
+        assert_eq!(
+            query.parent().unwrap().route,
+            [Component::Key("foo".into()), Component::Key("bar".into())]
+        );
+
+        let query = QueryBuilder::new().keys(["foo"].into_iter()).build();
+        assert!(query.parent().is_none());
+    }
 
     #[test]
     fn test_query_builder() {
