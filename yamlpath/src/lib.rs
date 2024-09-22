@@ -277,8 +277,21 @@ impl Document {
         self.query_node(query).map(|n| n.into())
     }
 
+    /// Returns a string slice of the original document corresponding to
+    /// the given [`Feature`].
+    ///
+    /// This function returns a slice corresponding to the [`Feature`]'s exact
+    /// span, meaning that leading whitespace for the start point is not
+    /// necessarily captured. See [`Self::extract_with_leading_whitespace`]
+    /// for feature extraction with rudimentary whitespace handling.
+    ///
+    /// Panics if the feature's span is invalid.
+    pub fn extract(&self, feature: &Feature) -> &str {
+        &self.source[feature.location.byte_span.0..feature.location.byte_span.1]
+    }
+
     /// Returns a string slice of the original document corresponding to the given
-    /// [`Feature`].
+    /// [`Feature`], along with any leading (indentation-semantic) whitespace.
     ///
     /// **Important**: The returned string here can be longer than the span
     /// identified in the [`Feature`]. In particular, this API will return a
@@ -287,7 +300,7 @@ impl Document {
     /// not encapsulated by the feature itself.
     ///
     /// Panics if the feature's span is invalid.
-    pub fn extract(&self, feature: &Feature) -> &str {
+    pub fn extract_with_leading_whitespace(&self, feature: &Feature) -> &str {
         let mut start_idx = feature.location.byte_span.0;
         let pre_slice = &self.source[0..start_idx];
         if let Some(last_newline) = pre_slice.rfind('\n') {
@@ -533,7 +546,10 @@ baz:
             ],
         };
 
-        assert_eq!(doc.extract(&doc.query(&query).unwrap()), "{d: e}");
+        assert_eq!(
+            doc.extract_with_leading_whitespace(&doc.query(&query).unwrap()),
+            "{d: e}"
+        );
     }
 
     #[test]

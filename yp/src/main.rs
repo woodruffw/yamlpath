@@ -29,7 +29,10 @@ fn main() -> Result<()> {
     let finding = doc.query(&query)?;
 
     println!("Finding: {finding:?}");
-    println!("Extracted:\n\n{}", doc.extract(&finding));
+    println!(
+        "Extracted:\n\n{}",
+        doc.extract_with_leading_whitespace(&finding)
+    );
 
     Ok(())
 }

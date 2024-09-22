@@ -61,6 +61,6 @@ fn run_testcase(path: &Path) {
         let document = Document::new(raw_testcase.clone()).unwrap();
         let feature = document.query(&query).unwrap();
 
-        assert_eq!(document.extract(&feature), expected)
+        assert_eq!(document.extract_with_leading_whitespace(&feature), expected)
     }
 }
