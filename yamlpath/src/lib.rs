@@ -41,12 +41,15 @@ pub enum QueryError {
     #[error("unexpected node: `{0}`")]
     UnexpectedNode(String),
     /// The YAML syntax tree is missing an expected named child node.
-    #[error("syntax node `{0}` is missing named child")]
-    MissingChild(String),
+    #[error("syntax node `{0}` is missing named child `{1}`")]
+    MissingChild(String, String),
     /// The YAML syntax tree is missing an expected named child node with
     /// the given field name.
     #[error("syntax node `{0}` is missing child field `{1}`")]
     MissingChildField(String, &'static str),
+    /// Any other query error that doesn't fit cleanly above.
+    #[error("query error: {0}")]
+    Other(String),
 }
 
 /// A query into some YAML document.
@@ -204,7 +207,7 @@ pub struct Document {
     source: String,
     tree: Tree,
     document_id: u16,
-    _block_node_id: u16,
+    block_node_id: u16,
     flow_node_id: u16,
     // A "block" sequence, i.e. a YAML-style array (`- foo\n-bar`)
     block_sequence_id: u16,
@@ -240,7 +243,7 @@ impl Document {
             source,
             tree,
             document_id: language.id_for_node_kind("document", true),
-            _block_node_id: language.id_for_node_kind("block_node", true),
+            block_node_id: language.id_for_node_kind("block_node", true),
             flow_node_id: language.id_for_node_kind("flow_node", true),
             block_sequence_id: language.id_for_node_kind("block_sequence", true),
             flow_sequence_id: language.id_for_node_kind("flow_sequence", true),
@@ -368,7 +371,7 @@ impl Document {
         let document = stream
             .named_children(&mut cur)
             .find(|c| c.kind_id() == self.document_id)
-            .ok_or_else(|| QueryError::MissingChild("document".into()))?;
+            .ok_or_else(|| QueryError::MissingChild(stream.kind().into(), "document".into()))?;
 
         // The document might have a directives section, which we need to
         // skip over. We do this by finding the top-level `block_node`
@@ -376,8 +379,8 @@ impl Document {
         // the top-level document value is expressed.
         let top_node = document
             .named_children(&mut cur)
-            .find(|c| c.kind_id() == self._block_node_id || c.kind_id() == self.flow_node_id)
-            .unwrap();
+            .find(|c| c.kind_id() == self.block_node_id || c.kind_id() == self.flow_node_id)
+            .ok_or_else(|| QueryError::Other("document has no block_node or flow_node".into()))?;
 
         let mut key_node = top_node;
         for component in &query.route {
@@ -473,9 +476,9 @@ impl Document {
         if child.kind_id() == self.block_sequence_item_id {
             // If we're in a block_sequence, there's an intervening `block_sequence_item`
             // getting in the way of our `flow_node`.
-            return child
-                .named_child(0)
-                .ok_or_else(|| QueryError::MissingChild(child.kind().into()));
+            return child.named_child(0).ok_or_else(|| {
+                QueryError::MissingChild(child.kind().into(), "block_sequence_item".into())
+            });
         } else if child.kind_id() == self.flow_pair_id {
             // Similarly, if our index happens to be a `flow_pair`, we need to
             // get the `value` child to get the next `flow_node`.
