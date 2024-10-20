@@ -345,6 +345,7 @@ impl Document {
                 .named_children(&mut cur)
                 .find(|c| c.kind_id() == self.comment_id)
             {
+                // NOTE: Infallible, since our document is UTF-8.
                 return Some(comment.utf8_text(self.source.as_bytes()).unwrap());
             }
 
@@ -443,6 +444,7 @@ impl Document {
             let key = child
                 .child_by_field_name("key")
                 .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "key"))?;
+            // NOTE: Infallible, since our document is UTF-8.
             let key_value = key.utf8_text(self.source.as_bytes()).unwrap();
             if key_value == expected {
                 // HACK: a mapping key might not have a corresponding value,
