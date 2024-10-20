@@ -66,6 +66,7 @@ pub enum QueryError {
 ///
 /// The sub-list member `e` would be identified via the path
 /// `foo`, `bar`, `baz`, `1`, `1`.
+#[derive(Debug)]
 pub struct Query {
     /// The individual top-down components of this query.
     route: Vec<Component>,
@@ -369,9 +370,15 @@ impl Document {
             .find(|c| c.kind_id() == self.document_id)
             .ok_or_else(|| QueryError::MissingChild("document".into()))?;
 
-        // From here, we expect a top-level `block_node` or `flow_node`
-        // depending on how the top-level value is expressed.
-        let top_node = document.child(0).unwrap();
+        // The document might have a directives section, which we need to
+        // skip over. We do this by finding the top-level `block_node`
+        // or `flow_node`, of which one will be present depending on how
+        // the top-level document value is expressed.
+        let top_node = document
+            .named_children(&mut cur)
+            .find(|c| c.kind_id() == self._block_node_id || c.kind_id() == self.flow_node_id)
+            .unwrap();
+
         let mut key_node = top_node;
         for component in &query.route {
             match self.descend(&key_node, component) {
