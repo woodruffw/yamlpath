@@ -14,7 +14,7 @@
 #![forbid(unsafe_code)]
 
 use thiserror::Error;
-use tree_sitter::{Node, Parser, Tree};
+use tree_sitter::{Language, Node, Parser, Tree};
 
 /// Possible errors when performing YAML path queries.
 #[derive(Error, Debug)]
@@ -229,7 +229,7 @@ impl Document {
         let source = source.into();
 
         let mut parser = Parser::new();
-        let language = tree_sitter_yaml::language();
+        let language: Language = tree_sitter_yaml::LANGUAGE.into();
         parser.set_language(&language)?;
 
         // NOTE: Infallible, assuming `language` is correctly constructed above.
