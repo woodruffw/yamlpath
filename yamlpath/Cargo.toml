@@ -10,7 +10,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-thiserror = "2.0.6"
+thiserror = "2.0.7"
 tree-sitter = "0.24.5"
 tree-sitter-yaml = "0.7.0"
 
