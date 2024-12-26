@@ -473,8 +473,30 @@ impl Document {
             let key = child
                 .child_by_field_name("key")
                 .ok_or_else(|| QueryError::MissingChildField(child.kind().into(), "key"))?;
-            // NOTE: Infallible, since our document is UTF-8.
-            let key_value = key.utf8_text(self.source.as_bytes()).unwrap();
+
+            // NOTE: To get the key's actual value, we need to get down to its
+            // inner scalar. This is slightly annoying, since keys can be
+            // quoted strings with no interior unquoted child. In those cases,
+            // we need to manually unquote them.
+            //
+            // NOTE: text unwraps are infallible, since our document is UTF-8.
+            let key_value = match key.named_child(0) {
+                Some(scalar) => {
+                    let key_value = scalar.utf8_text(self.source.as_bytes()).unwrap();
+
+                    match scalar.kind() {
+                        "single_quote_scalar" | "double_quote_scalar" => {
+                            let mut chars = key_value.chars();
+                            chars.next();
+                            chars.next_back();
+                            chars.as_str()
+                        }
+                        _ => key_value,
+                    }
+                }
+                None => key.utf8_text(self.source.as_bytes()).unwrap(),
+            };
+
             if key_value == expected {
                 // HACK: a mapping key might not have a corresponding value,
                 // in which case we fall back and return the `block_mapping_pair`
