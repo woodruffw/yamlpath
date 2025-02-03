@@ -6,13 +6,13 @@ use nom::{
     character::complete::{char, i32},
     combinator::{all_consuming, not},
     multi::separated_list1,
-    sequence::{delimited, tuple},
-    IResult,
+    sequence::delimited,
+    IResult, Parser,
 };
 use yamlpath::{Component, Query};
 
 fn index(input: &str) -> IResult<&str, Component> {
-    let (input, index) = delimited(char('['), i32, char(']'))(input)?;
+    let (input, index) = delimited(char('['), i32, char(']')).parse(input)?;
 
     Ok((input, Component::Index(index as usize)))
 }
@@ -23,17 +23,18 @@ fn key(input: &str) -> IResult<&str, Component> {
     // avoid accidentally consuming the empty `[]` case as a valid key
     // rather than an invalid index.
     let (input, (_, k, _)) =
-        tuple((not(tag("[")), take_till1(|c| c == '.'), not(tag("]"))))(input)?;
+        ((not(tag("[")), take_till1(|c| c == '.'), not(tag("]")))).parse(input)?;
 
     Ok((input, Component::Key(k.into())))
 }
 
 fn query(input: &str) -> IResult<&str, Vec<Component>> {
-    separated_list1(tag("."), alt((index, key)))(input)
+    separated_list1(tag("."), alt((index, key))).parse(input)
 }
 
 pub(crate) fn parse(input: &str) -> Result<Query, nom::Err<nom::error::Error<String>>> {
-    let (_, route) = all_consuming(query)(input)
+    let (_, route) = all_consuming(query)
+        .parse(input)
         .map_err(|e: nom::Err<nom::error::Error<&str>>| e.map_input(|input| input.to_string()))?;
 
     // Infallible: we always parse at least one component above.
