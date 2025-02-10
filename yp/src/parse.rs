@@ -23,7 +23,7 @@ fn key(input: &str) -> IResult<&str, Component> {
     // avoid accidentally consuming the empty `[]` case as a valid key
     // rather than an invalid index.
     let (input, (_, k, _)) =
-        ((not(tag("[")), take_till1(|c| c == '.'), not(tag("]")))).parse(input)?;
+        (not(tag("[")), take_till1(|c| c == '.'), not(tag("]"))).parse(input)?;
 
     Ok((input, Component::Key(k.into())))
 }
