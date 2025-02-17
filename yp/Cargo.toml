@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.95"
-clap = { version = "4.5.27", features = ["derive"] }
+clap = { version = "4.5.29", features = ["derive"] }
 nom = "8"
 yamlpath = { version = "*", path = "../yamlpath" }
