@@ -1,13 +1,13 @@
 //! Hacky DSL for path queries.
 
 use nom::{
+    IResult, Parser,
     branch::alt,
     bytes::complete::{tag, take_till1},
     character::complete::{char, i32},
     combinator::{all_consuming, not},
     multi::separated_list1,
     sequence::delimited,
-    IResult, Parser,
 };
 use yamlpath::{Component, Query};
 
