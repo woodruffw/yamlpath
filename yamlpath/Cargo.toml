@@ -6,7 +6,7 @@ authors = ["William Woodruff <william@yossarian.net>"]
 repository = "https://github.com/woodruffw/yamlpath"
 readme = "../README.md"
 keywords = ["yaml"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [dependencies]
