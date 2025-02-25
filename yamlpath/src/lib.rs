@@ -270,6 +270,25 @@ impl Document {
         self.tree.root_node().into()
     }
 
+    /// Returns whether the given range is spanned by a comment node.
+    ///
+    /// The comment node must fully span the range; a range that ends
+    /// after the comment or starts before it will not be considered
+    /// spanned.
+    pub fn range_spanned_by_comment(&self, start: usize, end: usize) -> bool {
+        let root = self.tree.root_node();
+
+        match root.named_descendant_for_byte_range(start, end) {
+            Some(child) => child.kind_id() == self.comment_id,
+            None => false,
+        }
+    }
+
+    /// Returns whether the given offset is within a comment node's span.
+    pub fn offset_inside_comment(&self, offset: usize) -> bool {
+        self.range_spanned_by_comment(offset, offset)
+    }
+
     /// Perform a query on the current document, returning a `Feature`
     /// if the query succeeds.
     pub fn query(&self, query: &Query) -> Result<Feature, QueryError> {
@@ -560,6 +579,41 @@ mod tests {
 
         let query = QueryBuilder::new().keys(["foo"].into_iter()).build();
         assert!(query.parent().is_none());
+    }
+
+    #[test]
+    fn test_location_spanned_by_comment() {
+        let doc = Document::new(
+            r#"
+foo: bar
+# comment
+baz: quux
+        "#,
+        )
+        .unwrap();
+
+        // Before the comment.
+        assert!(!doc.range_spanned_by_comment(1, 4));
+        // Single point within the comment's span.
+        assert!(doc.range_spanned_by_comment(13, 13));
+        // Within the comment's span.
+        assert!(doc.range_spanned_by_comment(13, 15));
+        // Starts inside the comment, ends outside.
+        assert!(!doc.range_spanned_by_comment(13, 21));
+    }
+
+    #[test]
+    fn test_offset_inside_comment() {
+        let doc = Document::new("foo: bar # abc def").unwrap();
+
+        let comment = doc.source().find('#').unwrap();
+        for idx in 0..doc.source().len() {
+            if idx < comment {
+                assert!(!doc.offset_inside_comment(idx));
+            } else {
+                assert!(doc.offset_inside_comment(idx));
+            }
+        }
     }
 
     #[test]
