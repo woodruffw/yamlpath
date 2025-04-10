@@ -545,12 +545,17 @@ impl Document {
             return Err(QueryError::ExhaustedList(idx, children.len()));
         };
 
+        // If we're in a block_sequence, there's an intervening `block_sequence_item`
+        // getting in the way of our `block_node`/`flow_node`.
         if child.kind_id() == self.block_sequence_item_id {
-            // If we're in a block_sequence, there's an intervening `block_sequence_item`
-            // getting in the way of our `flow_node`.
-            return child.named_child(0).ok_or_else(|| {
-                QueryError::MissingChild(child.kind().into(), "block_sequence_item".into())
-            });
+            // NOTE: We can't just get the first named child here, since there might
+            // be interceding comments.
+            return child
+                .named_children(&mut cur)
+                .find(|c| c.kind_id() == self.block_node_id || c.kind_id() == self.flow_node_id)
+                .ok_or_else(|| {
+                    QueryError::MissingChild(child.kind().into(), "block_sequence_item".into())
+                });
         } else if child.kind_id() == self.flow_pair_id {
             // Similarly, if our index happens to be a `flow_pair`, we need to
             // get the `value` child to get the next `flow_node`.
