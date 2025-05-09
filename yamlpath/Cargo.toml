@@ -1,13 +1,13 @@
 [package]
 name = "yamlpath"
-version = "0.16.0"
-description = "Format-preserving YAML feature extraction"
-authors = ["William Woodruff <william@yossarian.net>"]
-repository = "https://github.com/woodruffw/yamlpath"
-readme = "../README.md"
-keywords = ["yaml"]
-edition = "2024"
-license = "MIT"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
 thiserror = "2"

@@ -1,3 +1,13 @@
 [workspace]
 members = ["yamlpath", "yp"]
 resolver = "2"
+
+[workspace.package]
+version = "0.17.0"
+authors = ["William Woodruff <william@yossarian.net>"]
+description = "Format-preserving YAML feature extraction"
+repository = "https://github.com/zizmorcore/yamlpath"
+readme = "../README.md"
+keywords = ["yaml"]
+edition = "2024"
+license = "MIT"
